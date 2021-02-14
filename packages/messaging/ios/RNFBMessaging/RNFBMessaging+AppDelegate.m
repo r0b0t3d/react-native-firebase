@@ -24,6 +24,7 @@
 #import <RNFBApp/RNFBRCTEventEmitter.h>
 
 #import "RNFBMessagingSerializer.h"
+#import "RNFBMessagingCompletion.h"
 #import "RNFBMessaging+AppDelegate.h"
 
 @implementation RNFBMessagingAppDelegate
@@ -118,26 +119,24 @@
                 backgroundTaskId = UIBackgroundTaskInvalid;
             }
       }];
-      // TODO add support in a later version for calling completion handler directly from JS when user JS code complete
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t) (25 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-        completionHandler(UIBackgroundFetchResultNewData);
-
-        // Stop background task after the longest timeout, async queue is okay to freeze again after handling period
-        if (backgroundTaskId != UIBackgroundTaskInvalid) {
-            [application endBackgroundTask:backgroundTaskId];
-            backgroundTaskId = UIBackgroundTaskInvalid;
-        }
-      });
 
       // TODO investigate later - RN bridge gets invalidated at start when in background and a new bridge created - losing all events
       // TODO   so we just delay sending the event for a few seconds as a workaround
       // TODO   most likely Remote Debugging causing bridge to be invalidated
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t) (8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [[RNFBRCTEventEmitter shared] sendEventWithName:@"messaging_message_received_background" body:[RNFBMessagingSerializer remoteMessageUserInfoToDict:userInfo]];
+        NSDictionary* body = [RNFBMessagingSerializer remoteMessageUserInfoToDict:userInfo];
+        [body setValue:@(backgroundTaskId) forKey:@"backgroundTaskId"];
+        [[RNFBRCTEventEmitter shared] sendEventWithName:@"messaging_message_received_background" body:body];
+        [[RNFBMessagingCompletion shared] addCompletion:userInfo[@"messageId"] handler:@{
+          @"handler": completionHandler,
+          @"backgroundTaskId": @(backgroundTaskId),
+        }];
       });
     } else {
       [[RNFBRCTEventEmitter shared] sendEventWithName:@"messaging_message_received" body:[RNFBMessagingSerializer remoteMessageUserInfoToDict:userInfo]];
-      completionHandler(UIBackgroundFetchResultNoData);
+      [[RNFBMessagingCompletion shared] addCompletion:userInfo[@"messageId"] handler:@{
+        @"handler": completionHandler
+      }];
     }
   }
 }

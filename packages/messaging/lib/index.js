@@ -52,6 +52,20 @@ const statics = {
     VISIBILITY_PRIVATE: 0,
     VISIBILITY_PUBLIC: 1,
   },
+  NotificationPresentationOption: {
+    ALL: 'UNNotificationPresentationOptionAll',
+    NONE: 'UNNotificationPresentationOptionNone',
+    BADGE: 'UNNotificationPresentationOptionBadge',
+    SOUND: 'UNNotificationPresentationOptionSound',
+    ALERT: 'UNNotificationPresentationOptionAlert',
+    LIST: 'UNNotificationPresentationOptionList',
+    BANNER: 'UNNotificationPresentationOptionBanner',
+  },
+  BackgroundFetchResult: {
+    NEW_DATA: 'UIBackgroundFetchResultNewData',
+    NO_DATA: 'UIBackgroundFetchResultNoData',
+    FAILED: 'UIBackgroundFetchResultFailed'
+  }
 };
 
 const namespace = 'messaging';
@@ -78,7 +92,9 @@ class FirebaseMessagingModule extends FirebaseModule {
         );
         return () => Promise.resolve();
       }
-      return remoteMessage => backgroundMessageHandler(remoteMessage);
+      return remoteMessage => backgroundMessageHandler(remoteMessage, () => {
+        // Android do nothing on completion
+      });
     });
 
     if (isIOS) {
@@ -91,7 +107,9 @@ class FirebaseMessagingModule extends FirebaseModule {
           return Promise.resolve();
         }
 
-        return backgroundMessageHandler(remoteMessage);
+        return backgroundMessageHandler(remoteMessage, (result) => {
+          this.native.completeFetchResult(result);
+        });
       });
     }
   }
@@ -169,7 +187,19 @@ class FirebaseMessagingModule extends FirebaseModule {
       throw new Error("firebase.messaging().onMessage(*) 'listener' expected a function.");
     }
 
-    const subscription = this.emitter.addListener('messaging_message_received', listener);
+    const subscription = this.emitter.addListener('messaging_message_received', (message) => {
+      listener(message, (option) => {
+        if (isAndroid) {
+          // Android do nothing
+          return;
+        }
+        if (message.contentAvailable) {
+          this.native.completeFetchResult(message.messageId, option);
+        } else {
+          this.native.completeWillPresentNotification(message.messageId, option);
+        }
+      })
+    });
     return () => subscription.remove();
   }
 

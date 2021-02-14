@@ -26,7 +26,30 @@
 #import "RNFBMessaging+UNUserNotificationCenter.h"
 #import "RNFBMessaging+NSNotificationCenter.h"
 
+@implementation RCTConvert (UNNotificationPresentationOptions)
+
+RCT_ENUM_CONVERTER(UNNotificationPresentationOptions, (@{
+  @"UNNotificationPresentationOptionAlert": @(UNNotificationPresentationOptionAlert),
+  @"UNNotificationPresentationOptionBadge": @(UNNotificationPresentationOptionBadge),
+  @"UNNotificationPresentationOptionSound": @(UNNotificationPresentationOptionSound),
+  @"UNNotificationPresentationOptionAll": @(UNNotificationPresentationOptionAlert | UNNotificationPresentationOptionBadge | UNNotificationPresentationOptionSound),
+  @"UNNotificationPresentationOptionNone": @(UNNotificationPresentationOptionNone)
+}), UNNotificationPresentationOptionNone, integerValue);
+
+@end
+
+@implementation RCTConvert (UIBackgroundFetchResult)
+
+RCT_ENUM_CONVERTER(UIBackgroundFetchResult, (@{
+  @"UIBackgroundFetchResultNoData": @(UIBackgroundFetchResultNoData),
+  @"UIBackgroundFetchResultNewData": @(UIBackgroundFetchResultNewData),
+  @"UIBackgroundFetchResultFailed": @(UIBackgroundFetchResultFailed)
+}), UIBackgroundFetchResultNoData, integerValue);
+
+@end
+
 @implementation RNFBMessagingModule
+
 #pragma mark -
 #pragma mark Module Setup
 
@@ -332,6 +355,14 @@ RCT_EXPORT_METHOD(unsubscribeFromTopic:
       resolve(nil);
     }
   }];
+}
+
+RCT_EXPORT_METHOD(completeWillPresentNotification:(NSString *)messageId option:(UNNotificationPresentationOptions)option) {
+  [[RNFBMessagingCompletion shared] completeWillPresentNotification:messageId option:option];
+}
+
+RCT_EXPORT_METHOD(completeFetchResult:(NSString *)messageId result:(UIBackgroundFetchResult)result) {
+  [[RNFBMessagingCompletion shared] completeFetchResult:messageId result:result];
 }
 
 @end

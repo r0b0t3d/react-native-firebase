@@ -18,6 +18,7 @@
 #import <RNFBApp/RNFBRCTEventEmitter.h>
 
 #import "RNFBMessagingSerializer.h"
+#import "RNFBMessagingCompletion.h"
 #import "RNFBMessaging+UNUserNotificationCenter.h"
 
 @implementation RNFBMessagingUNUserNotificationCenter
@@ -74,13 +75,14 @@ struct {
     }
 
     // TODO in a later version allow customising completion options in JS code
-    completionHandler(UNNotificationPresentationOptionNone);
+    // completionHandler(UNNotificationPresentationOptionNone);
+    [[RNFBMessagingCompletion shared] addCompletion:notificationDict[@"messageId"] handler:@{
+      @"handler": completionHandler
+    }];
   }
 
   if (_originalDelegate != nil && originalDelegateRespondsTo.willPresentNotification) {
     [_originalDelegate userNotificationCenter:center willPresentNotification:notification withCompletionHandler:completionHandler];
-  } else {
-    completionHandler(UNNotificationPresentationOptionNone);
   }
 }
 

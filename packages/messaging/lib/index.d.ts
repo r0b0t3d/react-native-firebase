@@ -61,6 +61,8 @@ export namespace FirebaseMessagingTypes {
     AuthorizationStatus: typeof AuthorizationStatus;
     NotificationAndroidPriority: typeof NotificationAndroidPriority;
     NotificationAndroidVisibility: typeof NotificationAndroidVisibility;
+    NotificationPresentationOption: typeof NotificationPresentationOption;
+    BackgroundFetchResult: typeof BackgroundFetchResult;
   }
 
   /**
@@ -475,6 +477,22 @@ export namespace FirebaseMessagingTypes {
     PROVISIONAL = 2,
   }
 
+  export enum NotificationPresentationOption {
+    ALL    = 'UNNotificationPresentationOptionAll',
+    NONE   = 'UNNotificationPresentationOptionNone',
+    BADGE  = 'UNNotificationPresentationOptionBadge',
+    SOUND  = 'UNNotificationPresentationOptionSound',
+    ALERT  = 'UNNotificationPresentationOptionAlert',
+    LIST   = 'UNNotificationPresentationOptionList',
+    BANNER = 'UNNotificationPresentationOptionBanner',
+  }
+
+  export enum BackgroundFetchResult {
+    NEW_DATA = 'UIBackgroundFetchResultNewData',
+    NO_DATA  = 'UIBackgroundFetchResultNoData',
+    FAILED   = 'UIBackgroundFetchResultFailed'
+  }
+
   /**
    * An event that is received when a message fails to send.
    *
@@ -659,7 +677,7 @@ export namespace FirebaseMessagingTypes {
      *
      * @param listener Called with a `RemoteMessage` when a new FCM payload is received from the server.
      */
-    onMessage(listener: (message: RemoteMessage) => any): () => void;
+    onMessage(listener: (message: RemoteMessage, completionHanlder?: (option: NotificationPresentationOption | BackgroundFetchResult) => void) => any): () => void;
 
     /**
      * When the user presses a notification displayed via FCM, this listener will be called if the app
